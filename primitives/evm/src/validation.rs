@@ -17,9 +17,8 @@
 #![allow(clippy::comparison_chain)]
 
 pub use evm::backend::Basic as Account;
-use frame_support::sp_runtime::traits::UniqueSaturatedInto;
-use sp_core::{H160, H256, U256};
-use sp_std::vec::Vec;
+use primitive_types::{H160, H256, U256};
+use std::vec::Vec;
 
 #[derive(Debug)]
 pub struct CheckEvmTransactionInput {

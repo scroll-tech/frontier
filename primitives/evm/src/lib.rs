@@ -21,11 +21,11 @@ mod precompile;
 mod validation;
 
 use codec::{Decode, Encode};
-use frame_support::weights::Weight;
+//use frame_support::weights::Weight;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{H160, U256};
-use sp_std::vec::Vec;
+use primitive_types::{H160, U256};
+use std::vec::Vec;
 
 pub use evm::{
 	backend::{Basic as Account, Log},
@@ -86,7 +86,7 @@ pub struct GenesisAccount {
 	/// Account code.
 	pub code: Vec<u8>,
 }
-
+/* 
 /// Trait that outputs the current transaction gas price.
 pub trait FeeCalculator {
 	/// Return the minimal required gas price.
@@ -98,3 +98,4 @@ impl FeeCalculator for () {
 		(U256::zero(), Weight::zero())
 	}
 }
+*/
