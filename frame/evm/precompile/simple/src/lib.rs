@@ -20,6 +20,7 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
+use ripemd::Digest;
 use core::cmp::min;
 
 use fp_evm::{ExitError, ExitSucceed, LinearCostPrecompile, PrecompileFailure};
@@ -34,6 +35,39 @@ impl LinearCostPrecompile for Identity {
 	fn execute(input: &[u8], _: u64) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		Ok((ExitSucceed::Returned, input.to_vec()))
 	}
+}
+
+#[cfg(feature = "std")]
+use secp256k1::{
+	ecdsa::{RecoverableSignature, RecoveryId},
+	Message, SECP256K1,
+};
+
+/// Error verifying ECDSA signature
+pub enum EcdsaVerifyError {
+	/// Incorrect value of R or S
+	BadRS,
+	/// Incorrect value of V
+	BadV,
+	/// Invalid signature
+	BadSignature,
+}
+
+fn secp256k1_ecdsa_recover(
+	sig: &[u8; 65],
+	msg: &[u8; 32],
+) -> Result<[u8; 64], EcdsaVerifyError> {
+	let rid = RecoveryId::from_i32(if sig[64] > 26 { sig[64] - 27 } else { sig[64] } as i32)
+		.map_err(|_| EcdsaVerifyError::BadV)?;
+	let sig = RecoverableSignature::from_compact(&sig[..64], rid)
+		.map_err(|_| EcdsaVerifyError::BadRS)?;
+	let msg = Message::from_slice(msg).expect("Message is 32 bytes; qed");
+	let pubkey = SECP256K1
+		.recover_ecdsa(&msg, &sig)
+		.map_err(|_| EcdsaVerifyError::BadSignature)?;
+	let mut res = [0u8; 64];
+	res.copy_from_slice(&pubkey.serialize_uncompressed()[1..]);
+	Ok(res)
 }
 
 /// The ecrecover precompile.
@@ -61,9 +95,10 @@ impl LinearCostPrecompile for ECRecover {
 			return Ok((ExitSucceed::Returned, [0u8; 0].to_vec()));
 		}
 
-		let result = match sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg) {
+		let result = match secp256k1_ecdsa_recover(&sig, &msg) {
 			Ok(pubkey) => {
-				let mut address = sp_io::hashing::keccak_256(&pubkey);
+				let mut address = [0u8; 32];
+				address.copy_from_slice(&sha3::Keccak256::digest(&pubkey));
 				address[0..12].copy_from_slice(&[0u8; 12]);
 				address.to_vec()
 			}
@@ -82,8 +117,6 @@ impl LinearCostPrecompile for Ripemd160 {
 	const WORD: u64 = 120;
 
 	fn execute(input: &[u8], _cost: u64) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
-		use ripemd::Digest;
-
 		let mut ret = [0u8; 32];
 		ret[12..32].copy_from_slice(&ripemd::Ripemd160::digest(input));
 		Ok((ExitSucceed::Returned, ret.to_vec()))
@@ -98,7 +131,8 @@ impl LinearCostPrecompile for Sha256 {
 	const WORD: u64 = 12;
 
 	fn execute(input: &[u8], _cost: u64) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
-		let ret = sp_io::hashing::sha2_256(input);
+		let mut ret = [0u8; 32];
+		ret.copy_from_slice(&sha2::Sha256::digest(input));
 		Ok((ExitSucceed::Returned, ret.to_vec()))
 	}
 }
@@ -123,7 +157,7 @@ impl LinearCostPrecompile for ECRecoverPublicKey {
 		sig[32..64].copy_from_slice(&input[96..128]);
 		sig[64] = input[63];
 
-		let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg).map_err(|_| {
+		let pubkey = secp256k1_ecdsa_recover(&sig, &msg).map_err(|_| {
 			PrecompileFailure::Error {
 				exit_status: ExitError::Other("Public key recover failed".into()),
 			}

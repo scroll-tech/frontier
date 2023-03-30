@@ -24,7 +24,7 @@ use codec::{Decode, Encode};
 //use frame_support::weights::Weight;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use primitive_types::{H160, U256};
+use primitive_types::{H160, U256, H256};
 use std::vec::Vec;
 
 pub use evm::{
@@ -82,7 +82,7 @@ pub struct GenesisAccount {
 	/// Account balance.
 	pub balance: U256,
 	/// Full account storage.
-	pub storage: std::collections::BTreeMap<sp_core::H256, sp_core::H256>,
+	pub storage: std::collections::BTreeMap<H256, H256>,
 	/// Account code.
 	pub code: Vec<u8>,
 }

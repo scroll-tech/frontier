@@ -9,6 +9,9 @@ repository = "https://github.com/paritytech/frontier/"
 
 [dependencies]
 ripemd = { version = "0.1", default-features = false }
+sha2 = { version = "0.10", default-features = false }
+sha3 = { version = "0.10", default-features = false }
+secp256k1 = { version = "0.24.0", features = ["recovery", "global-context"] }
 
 # Substrate
 # sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }

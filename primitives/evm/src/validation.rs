@@ -47,7 +47,7 @@ pub struct CheckEvmTransactionConfig<'config> {
 pub struct CheckEvmTransaction<'config, E: From<InvalidEvmTransactionError>> {
 	pub config: CheckEvmTransactionConfig<'config>,
 	pub transaction: CheckEvmTransactionInput,
-	_marker: sp_std::marker::PhantomData<E>,
+	_marker:std::marker::PhantomData<E>,
 }
 
 #[derive(Debug)]
@@ -180,7 +180,7 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 			// We must ensure a transaction can pay the cost of its data bytes.
 			// If it can't it should not be included in a block.
 			let mut gasometer = evm::gasometer::Gasometer::new(
-				self.transaction.gas_limit.unique_saturated_into(),
+				self.transaction.gas_limit.as_u64(),
 				self.config.evm_config,
 			);
 			let transaction_cost = if self.transaction.to.is_some() {
