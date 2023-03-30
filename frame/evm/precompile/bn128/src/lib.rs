@@ -24,7 +24,7 @@ use fp_evm::{
 	ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
 	PrecompileResult,
 };
-use sp_core::U256;
+use primitive_types::U256;
 
 fn read_fr(input: &[u8], start_inx: usize) -> Result<bn::Fr, PrecompileFailure> {
 	if input.len() < start_inx + 32 {
